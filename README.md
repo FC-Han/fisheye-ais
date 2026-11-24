@@ -45,6 +45,8 @@ npm run build
 cd ..
 ```
 
+需要 Node ≥ 18（Vite 5 的下限；CI 用 22 LTS 验证）。
+
 ### 1.3 配置
 
 ```bash
@@ -105,7 +107,7 @@ python -m unittest discover -s tests -v                  # 83 个单测
 |---|---|---|
 | 后端单测 · Python 3.11 / 3.13 | 83 个 `unittest` 用例 | 两个版本都过，说明没有偷偷依赖某个小版本的库行为 |
 | 应用可导入 | `from backend.app.main import app` | 单测只覆盖纯函数；这一步确认没有密钥时整个应用仍能启动到「如实降级」 |
-| 前端构建 · Node 20 | `npm ci && npm run build` | `dist` 不入库，所以必须证明从源码能独立构建（`tsc --noEmit` 顺带卡住类型错误） |
+| 前端构建 · Node 22 | `npm ci && npm run build` | `dist` 不入库，所以必须证明从源码能独立构建（`tsc --noEmit` 顺带卡住类型错误） |
 
 CI 挂了不用猜：点进 Actions 看是哪一步红，日志里带用例名。
 
