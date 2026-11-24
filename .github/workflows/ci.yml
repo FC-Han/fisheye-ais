@@ -28,9 +28,9 @@ jobs:
         # 两个都过，说明代码没有偷偷依赖某个小版本的语法或库行为。
         python: ["3.11", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -51,17 +51,17 @@ jobs:
         run: python -c "from backend.app.main import app; assert app.routes, 'no routes'"
 
   frontend:
-    name: 前端构建 · Node 20
+    name: 前端构建 · Node 22
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
