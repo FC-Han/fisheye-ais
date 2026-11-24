@@ -1,0 +1,34 @@
+# ---- 凭证：绝对不允许进入版本库 ----
+.env
+.env.local
+api.txt
+*.credentials
+.cdsapirc
+.copernicusmarine/
+
+# ---- Python ----
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# ---- 前端 ----
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ---- 本地运行产物 ----
+# data/ 里有 60 万级轨迹点、NetCDF 缓存、归档 jsonl，克隆后会自动重建
+data/
+logs/
+*.db-wal
+*.db-shm
+*.pid
+
+# ---- 工具与系统 ----
+.workbuddy/
+.DS_Store
+Thumbs.db
+desktop.ini

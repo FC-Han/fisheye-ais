@@ -1,0 +1,11 @@
+# 统一换行，避免 Windows/macOS 协作时脚本出现 CRLF 问题
+* text=auto eol=lf
+
+# 二进制文件不做换行转换
+*.png binary
+*.jpg binary
+*.zip binary
+*.dbf binary
+*.nc binary
+*.db binary
+*.geojson text eol=lf

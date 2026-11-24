@@ -1,0 +1,24 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+websockets>=12
+python-dotenv>=1.0
+httpx>=0.27
+orjson>=3.10
+
+# --- Ocean Engine（环境数据提取）---
+# 只有环境引擎需要。不装这几个也能跑，capabilities() 会检测缺失并降级成
+# available=false，其它分析不受影响。
+numpy>=1.26
+pandas>=2.0
+xarray>=2024.1
+netCDF4>=1.6
+copernicusmarine>=2.0
+
+# --- 风场 ---
+# cdsapi    : ERA5 再分析（历史回填，滞后约 5 天，需 CDS API key）
+# cfgrib    : 解 NOAA GFS 的 GRIB2（近实时风，滞后约 5 小时，无需 key）
+# eccodes   : cfgrib 的底层解码器，pip 版自带二进制
+cdsapi>=0.7
+cfgrib>=0.9
+eccodes>=2.30
+h5py>=3.10
