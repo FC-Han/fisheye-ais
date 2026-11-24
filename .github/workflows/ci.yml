@@ -1,0 +1,74 @@
+name: CI
+
+# 目的只有一个：让「clone 下来能不能跑」这件事由机器回答，而不是靠谁记得跑一遍。
+# 这里刻意不连网络、不读 .env、不碰 data/ —— 和陌生人第一次跑这个项目时的处境一致。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # 同一分支连续 push 时，取消上一轮，别把 runner 时间浪费在过时代码上
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: 后端单测 · Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 是 requirements 里各库的稳妥下限，3.13 是当前本地开发版本。
+        # 两个都过，说明代码没有偷偷依赖某个小版本的语法或库行为。
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip check
+
+      - name: 单元测试
+        # 不用 pytest：全部用例是 stdlib unittest，少一个依赖少一处版本冲突
+        run: python -m unittest discover -s tests -v
+
+      - name: 应用可导入（无 .env、无 data/ 目录）
+        # 单测覆盖的是纯函数；这一步确认整个 FastAPI 应用在没有密钥的机器上也能 import
+        run: python -c "from backend.app.main import app; assert app.routes, 'no routes'"
+
+  frontend:
+    name: 前端构建 · Node 20
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖
+        # dist 不进版本库，所以这里必须能独立构建成功
+        run: npm ci
+
+      - name: 类型检查 + 构建
+        # build 脚本本身是 "tsc --noEmit && vite build"，类型错误会挡住构建
+        run: npm run build

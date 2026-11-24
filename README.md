@@ -1,5 +1,7 @@
 # FishEye 渔眼 · v0.5
 
+[![CI](https://github.com/FC-Han/fisheye-ais/actions/workflows/ci.yml/badge.svg)](https://github.com/FC-Han/fisheye-ais/actions/workflows/ci.yml)
+
 全球 AIS 实时态势 + 渔船行为分析的渔业情报平台。
 地图只是前端，真正的资产是持续积累的 **AIS 时空数据库** 和 **渔船行为事件库**。
 
@@ -93,6 +95,19 @@ python -m unittest discover -s tests -v                  # 83 个单测
 
 `readiness` 会明确告诉你哪一块没配好、为什么。它报 `available:false` 是设计行为，
 不是安装失败。
+
+### 1.6 自动检查在跑什么
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) 在每次 push / PR 时跑三件事，
+环境刻意与「陌生人第一次 clone」一致：**不读 `.env`、不碰 `data/`、不连任何外部 API**。
+
+| 检查 | 内容 | 为什么要有 |
+|---|---|---|
+| 后端单测 · Python 3.11 / 3.13 | 83 个 `unittest` 用例 | 两个版本都过，说明没有偷偷依赖某个小版本的库行为 |
+| 应用可导入 | `from backend.app.main import app` | 单测只覆盖纯函数；这一步确认没有密钥时整个应用仍能启动到「如实降级」 |
+| 前端构建 · Node 20 | `npm ci && npm run build` | `dist` 不入库，所以必须证明从源码能独立构建（`tsc --noEmit` 顺带卡住类型错误） |
+
+CI 挂了不用猜：点进 Actions 看是哪一步红，日志里带用例名。
 
 ---
 
