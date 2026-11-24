@@ -122,7 +122,10 @@ class Collector:
     # ---------- 主循环 ----------
     async def run(self) -> None:
         backoff = 1.0
+        silent_closes = 0
         while not self._stop.is_set():
+            t_connect = 0.0
+            msgs_at_connect = self.stats["msgs_total"]
             try:
                 self.stats["connected"] = False
                 async with websockets.connect(
@@ -137,6 +140,8 @@ class Collector:
                     await ws.send(json.dumps(sub))
                     self.stats["connected"] = True
                     self.stats["connects"] += 1
+                    t_connect = time.time()
+                    msgs_at_connect = self.stats["msgs_total"]
                     backoff = 1.0
                     log.info("已连接 AISStream，订阅区域：%s", self.region_label)
                     self._write_health("connected")
@@ -183,7 +188,21 @@ class Collector:
                 self.stats["connected"] = False
                 self.stats["last_error"] = f"{type(e).__name__}: {e}"
                 log.warning("连接异常：%s，%.0fs 后重试", e, backoff)
-                self._write_health(f"error: {type(e).__name__}")
+                # 上游对无效 key 的处理是「握手成功 → 立刻断开 → 不给任何说明」，
+                # 于是日志里会出现「已连接」紧接「连接异常」，看起来像网络问题。
+                # 连续两次「连上不到 20s 且一条消息没收到」就基本可以断定是 key 的问题。
+                if t_connect and time.time() - t_connect < 20 and self.stats["msgs_total"] == msgs_at_connect:
+                    silent_closes += 1
+                else:
+                    silent_closes = 0
+                if silent_closes == 2:
+                    log.error(
+                        "连续两次「刚连上就被服务器断开，且一条消息都没收到」。"
+                        "最常见的原因是 AISSTREAM_API_KEY 无效：到 aisstream.io 重新复制完整的 key"
+                        "（40 位十六进制，注意不要带空格或引号）写进 .env 后重启。"
+                        "若 key 确认无误，再检查订阅区域 BoundingBoxes 是否为空、经纬度有没有写反（先纬度后经度）。"
+                    )
+                self._write_health("error: 连接被立即断开（疑似 key 无效）" if silent_closes >= 2 else f"error: {type(e).__name__}")
                 try:
                     await asyncio.wait_for(self._stop.wait(), timeout=backoff)
                 except asyncio.TimeoutError:

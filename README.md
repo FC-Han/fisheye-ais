@@ -92,7 +92,7 @@ cd frontend && npm run dev     # http://localhost:5173，自动代理 /api 与 /
 ```bash
 curl http://127.0.0.1:8000/api/health                    # {"ok":true,...}
 curl http://127.0.0.1:8000/api/analysis/readiness        # 各引擎可用性 + 缺失原因
-python -m unittest discover -s tests -v                  # 83 个单测
+python -m unittest discover -s tests -v                  # 90 个单测
 ```
 
 `readiness` 会明确告诉你哪一块没配好、为什么。它报 `available:false` 是设计行为，
@@ -105,11 +105,14 @@ python -m unittest discover -s tests -v                  # 83 个单测
 
 | 检查 | 内容 | 为什么要有 |
 |---|---|---|
-| 后端单测 · Python 3.11 / 3.13 | 83 个 `unittest` 用例 | 两个版本都过，说明没有偷偷依赖某个小版本的库行为 |
+| 后端单测 · Python 3.11 / 3.13 | 90 个 `unittest` 用例 | 两个版本都过，说明没有偷偷依赖某个小版本的库行为 |
 | 应用可导入 | `from backend.app.main import app` | 单测只覆盖纯函数；这一步确认没有密钥时整个应用仍能启动到「如实降级」 |
 | 前端构建 · Node 22 | `npm ci && npm run build` | `dist` 不入库，所以必须证明从源码能独立构建（`tsc --noEmit` 顺带卡住类型错误） |
 
 CI 挂了不用猜：点进 Actions 看是哪一步红，日志里带用例名。
+
+**装不上、起不来、地图没船、环境数据是空的**——先去 [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)，
+里面的症状原文都是真跑出来的，包括「页面能打开但其实已经 20 天没数据」这种不看 `stream/status` 就发现不了的情况。
 
 ---
 
@@ -205,7 +208,9 @@ backend/app/     main.py + api/{map,meta,agent}.py + services/ + agent/
 frontend/        React + MapLibre（src/components/*）
 config/          regions.json（预设海域）/ zones.json（围栏，示意边界）
 database/        init_postgis.sql（迁移用）
-tests/           16 个单测（解析 / 规则引擎 / 中断判定 / 几何）
+tests/           90 个单测（解析 / 规则引擎 / 中断判定 / 几何 / 港口 / 环境引擎纯函数）
+docs/            TROUBLESHOOTING.md（排错手册，症状都来自真实运行）
+scripts/         load_wpi.py（港口表导入，首次查询会自动跑，一般不用手动执行）
 data/            fisheye.db + archive/*.jsonl（git 忽略）
 ```
 

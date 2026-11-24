@@ -102,8 +102,32 @@ else:
         )
 
 
+def _port_free(host: str, port: int) -> bool:
+    """先自己试着 bind 一次。uvicorn 抢不到端口时只打一行 Errno 10048 就退出 3，
+    用户看到的是「启动完成」紧接着「进程没了」，很容易误判成代码坏了。"""
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind((host, port))
+            return True
+        except OSError:
+            return False
+
+
 def main() -> None:
     import uvicorn
+
+    if not _port_free(settings.host, settings.port):
+        log.error(
+            "端口 %s:%s 已被占用，无法启动。\n"
+            "  · 换端口：FISHEYE_PORT=8001 python run.py\n"
+            "  · 或找占用者：Windows 用 netstat -ano | findstr :%s 再 taskkill /PID <pid> /F；\n"
+            "               macOS/Linux 用 lsof -i :%s\n"
+            "  · 也可能已经有一个 FishEye 在跑，先看浏览器能不能打开 http://%s:%s",
+            settings.host, settings.port, settings.port, settings.port, settings.host, settings.port,
+        )
+        raise SystemExit(3)
 
     uvicorn.run(
         "backend.app.main:app",
