@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 import math
+import sqlite3
 import threading
 from contextlib import closing
 
@@ -50,8 +51,13 @@ _PORT_SQL = (
 
 
 def _fetch_rows() -> list:
-    with closing(connect(readonly=True)) as conn:
-        return conn.execute(_PORT_SQL).fetchall()
+    try:
+        with closing(connect(readonly=True)) as conn:
+            return conn.execute(_PORT_SQL).fetchall()
+    except sqlite3.OperationalError:
+        # 干净克隆首次运行：库文件还不存在，只读连接打不开。
+        # 返回空列表，交给 _auto_import 建库并写入港口数据。
+        return []
 
 
 def _auto_import() -> list:

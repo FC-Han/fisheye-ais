@@ -11,7 +11,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, ORJSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from core.config import ROOT, settings
@@ -88,6 +88,18 @@ if DIST.exists():
         if f.exists() and f.is_file():
             return FileResponse(f)
         return FileResponse(DIST / "index.html")
+else:
+    # 干净克隆时前端还没构建。直接给一句人话，别让用户对着 404 猜。
+    @app.get("/")
+    def frontend_missing():
+        return HTMLResponse(
+            "<h2>前端尚未构建</h2>"
+            "<p>在项目根目录执行：</p>"
+            "<pre>cd frontend &amp;&amp; npm ci &amp;&amp; npm run build</pre>"
+            "<p>然后重启服务即可。接口文档在 <a href='/docs'>/docs</a>，"
+            "健康检查在 <a href='/api/health'>/api/health</a>。</p>",
+            status_code=503,
+        )
 
 
 def main() -> None:
